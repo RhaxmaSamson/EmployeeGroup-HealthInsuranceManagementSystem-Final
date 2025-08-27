@@ -1,4 +1,4 @@
-﻿using EmployeeHealthInsurance.DTOs;
+using EmployeeHealthInsurance.DTOs;
 using EmployeeHealthInsurance.Models;
 using EmployeeHealthInsurance.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -47,6 +47,13 @@ public class ClaimController : Controller
     [Authorize(Roles = "Employee,HRManager,Admin")]
     public async Task<IActionResult> List()
     {
+        if (User.IsInRole("Employee"))
+        {
+            var email = User?.Identity?.Name ?? string.Empty;
+            var myClaims = await _claimService.ListClaimsForEmployeeAsync(email);
+            return View(myClaims);
+        }
+
         var claims = await _claimService.ListAllClaimsAsync();
         return View(claims);
     }
@@ -60,6 +67,16 @@ public class ClaimController : Controller
         {
             return NotFound();
         }
+
+        if (User.IsInRole("Employee"))
+        {
+            var email = User?.Identity?.Name ?? string.Empty;
+            if (!string.Equals(claim.Enrollment?.Employee?.Email, email, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+        }
+
         return View(claim);
     }
 

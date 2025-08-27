@@ -1,9 +1,10 @@
-﻿using EmployeeHealthInsurance.Data;
+using EmployeeHealthInsurance.Data;
 using EmployeeHealthInsurance.DTOs;
 using EmployeeHealthInsurance.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EmployeeHealthInsurance.Services
@@ -37,6 +38,9 @@ namespace EmployeeHealthInsurance.Services
         {
             return await _context.Claims
                 .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Employee)
+                .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Policy)
                 .FirstOrDefaultAsync(c => c.ClaimId == claimId);
         }
 
@@ -56,6 +60,21 @@ namespace EmployeeHealthInsurance.Services
             return await _context.Claims
                 .Include(c => c.Enrollment)
                 .ThenInclude(e => e.Employee)
+                .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Policy)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Claim>> ListClaimsForEmployeeAsync(string employeeEmail)
+        {
+            if (string.IsNullOrWhiteSpace(employeeEmail)) return new List<Claim>();
+
+            return await _context.Claims
+                .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Employee)
+                .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Policy)
+                .Where(c => c.Enrollment.Employee.Email == employeeEmail)
                 .ToListAsync();
         }
     }
