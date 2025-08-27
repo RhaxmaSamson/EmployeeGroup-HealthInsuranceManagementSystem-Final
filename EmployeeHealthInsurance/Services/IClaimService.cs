@@ -1,4 +1,4 @@
-﻿using EmployeeHealthInsurance.DTOs;
+using EmployeeHealthInsurance.DTOs;
 using EmployeeHealthInsurance.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,5 +11,6 @@ namespace EmployeeHealthInsurance.Services
         Task<Claim> GetClaimDetailsAsync(int claimId);
         Task<bool> UpdateClaimStatusAsync(int claimId, ClaimStatus status);
         Task<IEnumerable<Claim>> ListAllClaimsAsync();
+        Task<IEnumerable<Claim>> ListClaimsForEmployeeAsync(string employeeEmail);
     }
 }
