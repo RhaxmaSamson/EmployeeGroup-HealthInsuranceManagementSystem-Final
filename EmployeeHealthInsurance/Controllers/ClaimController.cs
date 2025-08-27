@@ -1,4 +1,4 @@
-﻿using EmployeeHealthInsurance.DTOs;
+using EmployeeHealthInsurance.DTOs;
 using EmployeeHealthInsurance.Models;
 using EmployeeHealthInsurance.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 public class ClaimController : Controller
 {
     private readonly IClaimService _claimService;
-    private readonly IEnrollmentService _enrollmentService; // To get enrollment details
+    private readonly IEnrollmentService _enrollmentService;
 
     public ClaimController(IClaimService claimService, IEnrollmentService enrollmentService)
     {
@@ -18,14 +18,12 @@ public class ClaimController : Controller
         _enrollmentService = enrollmentService;
     }
 
-    // GET: Claim/Submit (Employees only)
     [Authorize(Roles = "Employee")]
     public IActionResult Submit()
     {
         return View();
     }
 
-    // POST: Claim/Submit (Employees only)
     [Authorize(Roles = "Employee")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -36,22 +34,27 @@ public class ClaimController : Controller
             var claim = await _claimService.SubmitClaimAsync(claimDto);
             if (claim != null)
             {
-                return RedirectToAction("List"); // Redirect to claims list or success page
+                return RedirectToAction("List");
             }
             ModelState.AddModelError("", "Failed to submit claim.");
         }
         return View(claimDto);
     }
 
-    // GET: Claim/List (Employees, HR, and Admin can view)
     [Authorize(Roles = "Employee,HRManager,Admin")]
     public async Task<IActionResult> List()
     {
+        if (User.IsInRole("Employee"))
+        {
+            var email = User?.Identity?.Name ?? string.Empty;
+            var myClaims = await _claimService.ListClaimsForEmployeeAsync(email);
+            return View(myClaims);
+        }
+
         var claims = await _claimService.ListAllClaimsAsync();
         return View(claims);
     }
 
-    // GET: Claim/Details/{id} (Employees, HR, and Admin can view)
     [Authorize(Roles = "Employee,HRManager,Admin")]
     public async Task<IActionResult> Details(int id)
     {
@@ -60,10 +63,19 @@ public class ClaimController : Controller
         {
             return NotFound();
         }
+
+        if (User.IsInRole("Employee"))
+        {
+            var email = User?.Identity?.Name ?? string.Empty;
+            if (!string.Equals(claim.Enrollment?.Employee?.Email, email, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+        }
+
         return View(claim);
     }
 
-    // POST: Claim/UpdateStatus/{id} (HR only)
     [Authorize(Roles = "HRManager")]
     [HttpPost]
     [ValidateAntiForgeryToken]
