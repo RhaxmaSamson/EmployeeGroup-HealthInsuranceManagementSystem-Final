@@ -1,4 +1,4 @@
-﻿using EmployeeHealthInsurance.Data;
+using EmployeeHealthInsurance.Data;
 using EmployeeHealthInsurance.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -25,7 +25,22 @@ namespace EmployeeHealthInsurance.Services
             return await _context.Organizations.FindAsync(id);
         }
 
-       
+        public async Task<Organization?> UpdateOrganizationAsync(Organization organization)
+        {
+            var existing = await _context.Organizations.FindAsync(organization.OrganizationId);
+            if (existing == null) return null;
+
+            existing.OrganizationName = organization.OrganizationName;
+            existing.ContactPerson = organization.ContactPerson;
+            existing.ContactEmail = organization.ContactEmail;
+            existing.Address = organization.Address;
+            existing.ContactPhone = organization.ContactPhone;
+
+            _context.Organizations.Update(existing);
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
         // Implementation for deleting an organization
         public async Task DeleteOrganizationAsync(int id)
         {
